@@ -1,3 +1,10 @@
+#include <DigitalIO.h>
+
+#include <Adafruit_BusIO_Register.h>
+#include <Adafruit_I2CDevice.h>
+#include <Adafruit_I2CRegister.h>
+#include <Adafruit_SPIDevice.h>
+
 // Basic demo for accelerometer/gyro readings from Adafruit LSM6DS3TR-C
 
 #include <Adafruit_LSM6DS3TRC.h>
@@ -12,6 +19,7 @@
 Adafruit_LSM6DS3TRC lsm6ds3trc;
 
 void setup(void) {
+
   Serial.begin(115200);
   while (!Serial)
     delay(10); // will pause Zero, Leonardo, etc until serial console opens
@@ -155,44 +163,45 @@ void loop() {
   sensors_event_t temp;
   lsm6ds3trc.getEvent(&accel, &gyro, &temp);
 
-  Serial.print("\t\tTemperature ");
-  Serial.print(temp.temperature);
-  Serial.println(" deg C");
+  // Serial.print("\t\tTemperature ");
+  // Serial.print(temp.temperature);
+  // printf("%f", temp.temperature);
+  // Serial.println(" deg C");
 
-  /* Display the results (acceleration is measured in m/s^2) */
-  Serial.print("\t\tAccel X: ");
+  // /* Display the results (acceleration is measured in m/s^2) */
+  // Serial.print("\t\tAccel X: ");
+  // Serial.print(accel.acceleration.x);
+  // Serial.print(" \tY: ");
+  // Serial.print(accel.acceleration.y);
+  // Serial.print(" \tZ: ");
+  // Serial.print(accel.acceleration.z);
+  // Serial.println(" m/s^2 ");
+
+  // /* Display the results (rotation is measured in rad/s) */
+  // Serial.print("\t\tGyro X: ");
+  // Serial.print(gyro.gyro.x);
+  // Serial.print(" \tY: ");
+  // Serial.print(gyro.gyro.y);
+  // Serial.print(" \tZ: ");
+  // Serial.print(gyro.gyro.z);
+  // Serial.println(" radians/s ");
+  // Serial.println();
+
+  // delay(1000);
+
+   // serial plotter friendly format
+
+  // Serial.print(temp.temperature);
+  // Serial.print(",");
+
   Serial.print(accel.acceleration.x);
-  Serial.print(" \tY: ");
-  Serial.print(accel.acceleration.y);
-  Serial.print(" \tZ: ");
-  Serial.print(accel.acceleration.z);
-  Serial.println(" m/s^2 ");
+  Serial.print(","); Serial.print(accel.acceleration.y);
+  Serial.print(","); Serial.print(accel.acceleration.z);
+  Serial.print(",");
 
-  /* Display the results (rotation is measured in rad/s) */
-  Serial.print("\t\tGyro X: ");
   Serial.print(gyro.gyro.x);
-  Serial.print(" \tY: ");
-  Serial.print(gyro.gyro.y);
-  Serial.print(" \tZ: ");
-  Serial.print(gyro.gyro.z);
-  Serial.println(" radians/s ");
+  Serial.print(","); Serial.print(gyro.gyro.y);
+  Serial.print(","); Serial.print(gyro.gyro.z);
   Serial.println();
-
-  delay(1000);
-
-  //  // serial plotter friendly format
-
-  //Serial.print(temp.temperature);
-  //Serial.print(",");
-
-  //Serial.print(accel.acceleration.x);
-  //Serial.print(","); Serial.print(accel.acceleration.y);
-  //Serial.print(","); Serial.print(accel.acceleration.z);
-  //Serial.print(",");
-
-  //Serial.print(gyro.gyro.x);
-  //Serial.print(","); Serial.print(gyro.gyro.y);
-  //Serial.print(","); Serial.print(gyro.gyro.z);
- // Serial.println();
-  //delayMicroseconds(10000);
+  delay(100);
 }
