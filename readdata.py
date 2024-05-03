@@ -4,36 +4,8 @@ import win32api
 import sys
 import time
 
-#import board
-import busio
-
-import digitalio
-
-BTN_ADDR = 0x6f
-
-# led = digitalio.DigitalInOut(board.LED)
-# led.direction = digitalio.Direction.OUTPUT
-
-# i2c = busio.I2C(scl = board.GP5, sda = board.GP4, frequency=100000)
-
 pixelsPerMeter = 100
 w, h = 600, 600
-
-# def readBtnStatus():
-#     data = bytearray(1)
-#     while not i2c.try_lock():
-#         time.sleep(0.1)
-#     i2c.writeto(0x6f, bytearray([0x03]))
-#     i2c.readfrom_into(0x6f, data)
-#     i2c.unlock()
-#     result = data[0] & 0x04
-#     return result != 0
-
-# def writeBtnLED(brightness, reg_addr):
-#     while not i2c.try_lock():
-#         time.sleep(0.1)
-#     i2c.writeto(0x6f, bytearray([reg_addr, brightness]))
-#     i2c.unlock()
 
 def getScreenResolution():
     width = win32api.GetSystemMetrics(0)
@@ -58,6 +30,13 @@ class Motion:
         self.yoffset = 0
         self.zoffset = 0
         self.dt = 1*(10**-1)
+        self.btnStatus = 0
+        self.press = False
+        self.release = False
+        self.oldStatus = 0
+        self.btnPressTime = 0
+
+        self.btnFirstPressTime = 0
     
     def getCurrPos(self):
         return (self.x, self.y)
@@ -84,6 +63,9 @@ class Motion:
         self.xoffset = xSum/len(xList)
         self.yoffset = ySum/len(yList)
         self.zoffset = zSum/len(zList)
+    
+    def isDoublePressed(self):
+        return self.press and time.time() - self.btnPressTime < 0.5
 
     def update(self, data):
         accelList = data.split(',')
@@ -117,21 +99,13 @@ class Motion:
         self.vy = (self.vy + avgAy*self.dt)
         self.vz = (self.vz + avgAz*self.dt)
 
-        # if avgVx > 1.5:
-        #     avgVx = 1.5
-        # elif avgVx < -1.5:
-        #     avgVx = -1.5
         if abs(self.vx) > 1.5:
             self.vx = self.vx/abs(self.vx) * 1.5
         avgVx = (self.vx + oldVx)/2
-        # if avgVy > 1.5:
-        #     avgVy = 1.5
-        # elif avgVy < 1.5:
-        #     avgVy = -1.5
+       
         if abs(self.vy) > 1.5:
             self.vy = self.vy/abs(self.vy) * 1.5
         avgVy = (self.vy + oldVy)/2
-        avgVz = (self.vz + oldVz)/2
 
         self.x = self.x + avgVx*self.dt
         if abs(self.x) >= ((w-50)/2)/pixelsPerMeter:
@@ -140,52 +114,52 @@ class Motion:
         if abs(self.y) >= ((h-50)/2)/pixelsPerMeter:
             self.y = self.y/abs(self.y)*((h-50)/2)/pixelsPerMeter
 
+        self.btnStatus = int(accelList[-1])
 
-        # #if abs(self.ax*self.dt) > 0.05:
-        # self.vx += self.ax*self.dt
-
-        # #if abs(self.ay*self.dt) > 0.05:
-        # self.vy += self.ay*self.dt
         
-        # #if abs(self.az*self.dt) > 0.05:
-        # self.vz += self.ay*self.dt
 
 def readserial(comport, baudrate):
     ser = serial.Serial(comport, baudrate, timeout = 0.1)
 
-    print("accelX,accelY,accelZ,gyroX,gyroY,gyroZ")
-    t.pendown()
-    count = 0
+    t.penup()
+    print("Calibrating...")
     motionSensor.calibrate(ser)
+    print("Calibration Complete")
     while True:
         t.screen.onkeypress(exit, "q")
         t.screen.listen()
 
-        # if readBtnStatus():
-        #     writeBtnLED(255, 0x19)
-        #     t.pendown()
-        # else:
-        #     writeBtnLED(0, 0x19)
-        #     t.penup()
-
-        count += 1
+        if motionSensor.btnStatus == 1 and motionSensor.btnFirstPressTime == 0:
+            motionSensor.btnFirstPressTime = time.time()
+            btnPressList = [1]
+        
+        if time.time() - motionSensor.btnFirstPressTime <= 0.5:
+            btnPressList.append(motionSensor.btnStatus)
+            zeroIndex = -1
+            for i in range(len(btnPressList)):
+                if btnPressList[i] == 0:
+                    zeroIndex = i
+                    break
+            print(btnPressList)
+            if zeroIndex != -1 and btnPressList[zeroIndex:].count(1) > 0:
+                print('undo')
+                t.clear()
+        elif time.time() - motionSensor.btnFirstPressTime > 0.7:
+            motionSensor.btnFirstPressTime = 0
+            btnPressList = []
         data = ser.readline().decode().strip()
         if data:
             motionSensor.update(data)
-            print(data)
-
-            print(f"{motionSensor.x}, '{motionSensor.y}")
-            x, y = t.position()
             t.goto((motionSensor.x*pixelsPerMeter, motionSensor.y*pixelsPerMeter))
-            #t.setpos((motionSensor.x*10, motionSensor.y*10))
-
+            if motionSensor.btnStatus == 1:
+                t.pendown()
+            else:
+                t.penup()
+        motionSensor.oldStatus = motionSensor.btnStatus
 
     
 if __name__ == '__main__':
     motionSensor = Motion()
     t = Turtle()
-    # screen.title("Air Notes App")
-    # screen.bgcolor("white")
-    #w, h = getScreenResolution()
     t.screen.setup(w, h, startx=50, starty=50)
     readserial('COM8', 115200)

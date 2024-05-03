@@ -1,13 +1,8 @@
-#include <DigitalIO.h>
-
-#include <Adafruit_BusIO_Register.h>
-#include <Adafruit_I2CDevice.h>
-#include <Adafruit_I2CRegister.h>
-#include <Adafruit_SPIDevice.h>
-
 // Basic demo for accelerometer/gyro readings from Adafruit LSM6DS3TR-C
 
 #include <Adafruit_LSM6DS3TRC.h>
+#include <SparkFun_Qwiic_Button.h>
+QwiicButton button;
 
 // For SPI mode, we need a CS pin
 #define LSM_CS 10
@@ -15,6 +10,9 @@
 #define LSM_SCK 13
 #define LSM_MISO 12
 #define LSM_MOSI 11
+
+#define BTN_ADDR 111
+#define LED_ADDR 25
 
 Adafruit_LSM6DS3TRC lsm6ds3trc;
 
@@ -33,7 +31,17 @@ void setup(void) {
     while (1) {
       delay(10);
     }
+
+  Wire.begin(); //Join I2C bus
+
+  //check if button will acknowledge over I2C
+
+}
+  if (button.begin() == false) {
+    Serial.println("Device did not acknowledge! Freezing.");
+    while (1);
   }
+  Serial.println("Button acknowledged.");
 
   Serial.println("LSM6DS3TR-C Found!");
 
@@ -163,37 +171,12 @@ void loop() {
   sensors_event_t temp;
   lsm6ds3trc.getEvent(&accel, &gyro, &temp);
 
-  // Serial.print("\t\tTemperature ");
-  // Serial.print(temp.temperature);
-  // printf("%f", temp.temperature);
-  // Serial.println(" deg C");
-
-  // /* Display the results (acceleration is measured in m/s^2) */
-  // Serial.print("\t\tAccel X: ");
-  // Serial.print(accel.acceleration.x);
-  // Serial.print(" \tY: ");
-  // Serial.print(accel.acceleration.y);
-  // Serial.print(" \tZ: ");
-  // Serial.print(accel.acceleration.z);
-  // Serial.println(" m/s^2 ");
-
-  // /* Display the results (rotation is measured in rad/s) */
-  // Serial.print("\t\tGyro X: ");
-  // Serial.print(gyro.gyro.x);
-  // Serial.print(" \tY: ");
-  // Serial.print(gyro.gyro.y);
-  // Serial.print(" \tZ: ");
-  // Serial.print(gyro.gyro.z);
-  // Serial.println(" radians/s ");
-  // Serial.println();
-
-  // delay(1000);
-
-   // serial plotter friendly format
-
-  // Serial.print(temp.temperature);
-  // Serial.print(",");
-
+  // if (button.isPressed() == true) {
+  //   Serial.println("The button is pressed!");
+  //   while (button.isPressed() == true)
+  //     delay(10);  //wait for user to stop pressing
+  //   Serial.println("The button is not pressed!");
+  // }
   Serial.print(accel.acceleration.x);
   Serial.print(","); Serial.print(accel.acceleration.y);
   Serial.print(","); Serial.print(accel.acceleration.z);
@@ -202,6 +185,9 @@ void loop() {
   Serial.print(gyro.gyro.x);
   Serial.print(","); Serial.print(gyro.gyro.y);
   Serial.print(","); Serial.print(gyro.gyro.z);
+  Serial.print(","); Serial.print(button.isPressed());
   Serial.println();
+
+
   delay(100);
 }
