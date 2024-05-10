@@ -1,16 +1,10 @@
 import serial
 from turtle import *
-import win32api
 import sys
 import time
 
 pixelsPerMeter = 100
 w, h = 600, 600
-
-def getScreenResolution():
-    width = win32api.GetSystemMetrics(0)
-    height = win32api.GetSystemMetrics(1)
-    return width, height
 
 def exit():
     sys.exit()
